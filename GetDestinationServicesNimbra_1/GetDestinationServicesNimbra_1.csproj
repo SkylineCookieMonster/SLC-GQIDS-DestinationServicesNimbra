@@ -19,7 +19,7 @@
 	<ItemGroup>
 		<PackageReference Include="Skyline.DataMiner.Core.DataMinerSystem.Common" Version="1.1.0.5" />
 		<PackageReference Include="Skyline.DataMiner.Dev.Automation" Version="10.3.7" />
-		<PackageReference Include="SLC.CLib.Netinsight.Nimbra" Version="1.0.2401.6-DEVFAddInterfaces.6" />
+		<PackageReference Include="SLC.CLib.Netinsight.Nimbra" Version="1.0.37479.3-DEVFAddChannelsScrapped.3" />
 	</ItemGroup>
 	<ProjectExtensions>
 	    <VisualStudio>

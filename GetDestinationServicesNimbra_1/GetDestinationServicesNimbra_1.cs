@@ -63,7 +63,7 @@ namespace GetDestinationServicesNimbra_1
     [GQIMetaData(Name = "NimbraDestinations")]
     public class MyDataSource : IGQIDataSource, IGQIInputArguments, IGQIOnInit
     {
-        private readonly GQIStringArgument _argument = new GQIStringArgument("Purpose Filter") { IsRequired = false };
+        private readonly GQIStringArgument _argument = new GQIStringArgument("Purpose Filter") { IsRequired = true };
         private string _purposeFilter = string.Empty;
         private IDms _dms;
 
@@ -73,7 +73,6 @@ namespace GetDestinationServicesNimbra_1
             {
                 var nodes = _dms.GetNimbraNodes().Where(e => e.Element.State == Skyline.DataMiner.Core.DataMinerSystem.Common.ElementState.Active).ToDictionary(n => n.Element.DmsElementId, n => n);
 
-                // var nimbraManager = _dms.GetNimbraManager("Netinsight Nimbra Manager");
                 List<MergedTables> destinationList = new List<MergedTables>();
 
                 foreach (var node in nodes.Values)
@@ -82,25 +81,26 @@ namespace GetDestinationServicesNimbra_1
                     {
                         foreach (var destination in service.Destinations)
                         {
-                            MergedTables mergedTables = new MergedTables
+                            foreach (var channel in destination.Channels)
                             {
-                                Id = destination.Key,
-                                SrcNodeName = service.SrcNodeName,
-                                SrcTtpPurpose = service.TtpPurpose,
-                                SrcDsti = service.SrcDsti,
-                                SrcCustomerId = service.CustomerId,
-                                DstOperStatus = destination.DstOperStatus,
-                                DstDsti = destination.DstDsti,
-                                DstName = destination.DstName,
-                            };
+                                MergedTables mergedTables = new MergedTables
+                                {
+                                    Id = destination.Key,
+                                    SrcNodeName = service.SrcNodeName,
+                                    SrcTtpPurpose = service.TtpPurpose,
+                                    SrcDsti = service.SrcDsti,
+                                    SrcCustomerId = service.CustomerId,
+                                    DstOperStatus = destination.DstOperStatus,
+                                    DstDsti = destination.DstDsti,
+                                    DstName = destination.DstName,
+                                    DefaultChannel = channel.ChannelId == "1" ? "Enabled" : "Disabled",
+                                    ProtectedChannel = channel.ChannelId == "2" ? "Enabled" : "Disabled",
+                                };
 
-                            destinationList.Add(mergedTables);
+                                destinationList.Add(mergedTables);
 
-                            // Need to get Src Route Name from Service Channels Table as well as SrcChannelId1 and Id2, Service channels table is from GetTable(5000);
-                            // IManagerNode dstManagerNode = null;
-
-                            // INimbraNode dstNode = nodes[dstManagerNode.ElementId];
-                            // var dstLocation = dstManagerNode.Location;
+                                // Need to get Src Route Name from Service Channels Table as well as SrcChannelId1 and Id2, Service channels table is from GetTable(5000);
+                            }
                         }
                     }
                 }
@@ -117,10 +117,12 @@ namespace GetDestinationServicesNimbra_1
             new GQIStringColumn("Src Node"), // Source Node
             new GQIStringColumn("Src TTP Purpose"), // Name
             new GQIStringColumn("Src DSTI"), // Source DSTI
-            new GQIIntColumn("Src Customer ID"), // Customer ID
+            new GQIIntColumn("Srcs Customer ID"), // Customer ID
             new GQIStringColumn("Oper Status"), // Oper Status
             new GQIStringColumn("Dest DSTI"),
             new GQIStringColumn("Dest Name"), // Destination Name probably from Service Destinations Table
+            new GQIStringColumn("Default Channel"),
+            new GQIStringColumn("Protected Channel"),
 
             // Add Src route from Service Channels Table, also add Channel ID based on 1 or 2
 
@@ -159,12 +161,15 @@ namespace GetDestinationServicesNimbra_1
                         new GQICell { Value = destination.DstOperStatus.ToString() },
                         new GQICell { Value = destination.DstDsti },
                         new GQICell { Value = destination.DstName },
+                        new GQICell { Value = destination.DefaultChannel },
+                        new GQICell { Value = destination.ProtectedChannel },
+
                     });
 
                 rows.Add(newRow);
             }
 
-            var filteredRows = _purposeFilter == string.Empty ? rows.ToArray() : rows.Where(row => (string)row.Cells[2].Value == _purposeFilter).ToArray();
+            var filteredRows = rows.Where(row => (string)row.Cells[2].Value == _purposeFilter).ToArray();
 
             return new GQIPage(filteredRows)
             {
@@ -240,6 +245,10 @@ namespace GetDestinationServicesNimbra_1
             public string DstDsti { get; set; }
 
             public string DstName { get; set; }
+
+            public string DefaultChannel { get; set; }
+
+            public string ProtectedChannel { get; set; }
         }
     }
 }
