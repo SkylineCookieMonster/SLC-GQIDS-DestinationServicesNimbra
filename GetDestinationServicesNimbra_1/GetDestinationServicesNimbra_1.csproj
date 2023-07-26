@@ -17,10 +17,10 @@
 		<DefineConstants>$(DefineConstants);DCFv1;DBInfo;ALARM_SQUASHING</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Skyline.DataMiner.Core.DataMinerSystem.Automation" Version="1.1.0.5" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Skyline.DataMiner.Core.DataMinerSystem.Common" Version="1.1.0.5" />
 		<PackageReference Include="Skyline.DataMiner.Dev.Automation" Version="10.3.8" />
-		<PackageReference Include="SLC.CLib.Netinsight.Nimbra" Version="1.0.8171.12-DEVFAddChannelRowsToDestinationColumns.12" />
+		<PackageReference Include="SLC.CLib.Netinsight.Nimbra" Version="1.0.52598.1-DEVFReview-MSA.1" />
 	</ItemGroup>
 	<ProjectExtensions>
 	    <VisualStudio>

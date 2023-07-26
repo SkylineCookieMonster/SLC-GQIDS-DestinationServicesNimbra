@@ -51,203 +51,178 @@ DATE		VERSION		AUTHOR			COMMENTS
 
 namespace GetDestinationServicesNimbra_1
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Skyline.DataMiner.Analytics.GenericInterface;
-    using Skyline.DataMiner.CommunityLibrary.Netinsight.Nimbra;
-    using Skyline.DataMiner.Core.DataMinerSystem.Common;
-    using Skyline.DataMiner.Net;
-    using Skyline.DataMiner.Net.Messages;
+	using System;
+	using System.Collections.Generic;
+	using System.Linq;
+	using Skyline.DataMiner.Analytics.GenericInterface;
+	using Skyline.DataMiner.CommunityLibrary.Netinsight.Nimbra;
+	using Skyline.DataMiner.Core.DataMinerSystem.Common;
+	using Skyline.DataMiner.Net;
+	using Skyline.DataMiner.Net.Messages;
 
-    [GQIMetaData(Name = "getDestinationServicesNimbra")]
-    public class MyDataSource : IGQIDataSource, IGQIInputArguments, IGQIOnInit
-    {
-        private readonly GQIStringArgument _argument = new GQIStringArgument("Purpose Filter") { IsRequired = true };
-        private string _purposeFilter = string.Empty;
-        private IDms _dms;
+	[GQIMetaData(Name = "getDestinationServicesNimbra")]
+	public class MyDataSource : IGQIDataSource, IGQIInputArguments, IGQIOnInit
+	{
+		private readonly GQIStringArgument _argument = new GQIStringArgument("Purpose Filter") { IsRequired = true };
+		private string _purposeFilter = string.Empty;
+		private IDms _dms;
+		private INimbraNode[] _nodes;
+		private int limit = 30;
+		private int leftOff;
 
-        public IEnumerable<MergedTables> NimbraDestinations
-        {
-            get
-            {
-                var nodes = _dms.GetNimbraNodes().Where(e => e.Element.State == Skyline.DataMiner.Core.DataMinerSystem.Common.ElementState.Active).ToDictionary(n => n.Element.DmsElementId, n => n);
+		public INimbraNode[] Nodes
+		{
+			get
+			{
+				if (_nodes == null)
+				{
+					_nodes = _dms.GetNimbraNodes().Where(e => e.Element.State == Skyline.DataMiner.Core.DataMinerSystem.Common.ElementState.Active).ToArray();
+				}
 
-                List<MergedTables> destinationList = new List<MergedTables>();
+				return _nodes;
+			}
+		}
 
-                foreach (var node in nodes.Values)
-                {
-                    foreach (var service in node.Services)
-                    {
-                        foreach (var destination in service.Destinations)
-                        {
-                            MergedTables mergedTables = new MergedTables
-                            {
-                                Id = destination.Key,
-                                SrcNodeName = service.SrcNodeName,
-                                SrcTtpPurpose = service.TtpPurpose,
-                                SrcDsti = service.SrcDsti,
-                                SrcCustomerId = service.CustomerId,
-                                DstOperStatus = destination.DstOperStatus,
-                                DstDsti = destination.DstDsti,
-                                DstName = destination.DstName,
-                                DefaultChannel = destination.DefaultChannel,
-                                ProtectionChannel = destination.ProtectionChannel,
-                                DefaultSrcRouteName = destination.DefaultSrcRouteName,
-                                ProtectionSrcRouteName = destination.ProtectionSrcRouteName,
-                            };
+		public GQIColumn[] GetColumns()
+		{
+			return new GQIColumn[]
+			{
+				new GQIStringColumn("ID"),
+				new GQIStringColumn("Src Node"), // Source Node
+				new GQIStringColumn("Src TTP Purpose"), // Name
+				new GQIStringColumn("Src DSTI"), // Source DSTI
+				new GQIIntColumn("Srcs Customer ID"), // Customer ID
+				new GQIStringColumn("Oper Status"), // Oper Status
+				new GQIStringColumn("Dest DSTI"),
+				new GQIStringColumn("Dest Name"), // Destination Name
+				new GQIBooleanColumn("Default Channel"),
+				new GQIBooleanColumn("Protection Channel"),
+				new GQIStringColumn("Default Src Route Name"),
+				new GQIStringColumn("Protection Src Route Name"),
+			};
+		}
 
-                            destinationList.Add(mergedTables);
-                        }
-                    }
-                }
+		public GQIArgument[] GetInputArguments()
+		{
+			return new GQIArgument[] { _argument };
+		}
 
-                return destinationList;
-            }
-        }
+		public OnArgumentsProcessedOutputArgs OnArgumentsProcessed(OnArgumentsProcessedInputArgs args)
+		{
+			_purposeFilter = args.GetArgumentValue(_argument);
+			return default;
+		}
 
-        public GQIColumn[] GetColumns()
-        {
-            return new GQIColumn[]
-            {
-            new GQIStringColumn("ID"),
-            new GQIStringColumn("Src Node"), // Source Node
-            new GQIStringColumn("Src TTP Purpose"), // Name
-            new GQIStringColumn("Src DSTI"), // Source DSTI
-            new GQIIntColumn("Srcs Customer ID"), // Customer ID
-            new GQIStringColumn("Oper Status"), // Oper Status
-            new GQIStringColumn("Dest DSTI"),
-            new GQIStringColumn("Dest Name"), // Destination Name
-            new GQIBooleanColumn("Default Channel"),
-            new GQIBooleanColumn("Protection Channel"),
-            new GQIStringColumn("Default Src Route Name"),
-            new GQIStringColumn("Protection Src Route Name"),
-            };
-        }
+		public GQIPage GetNextPage(GetNextPageInputArgs args)
+		{
+			var rows = new List<GQIRow>();
+			for (int i = leftOff; i < Nodes.Length; i++)
+			{
+				var node = Nodes[i];
+				leftOff++;
+				foreach (var service in node.Services)
+				{
+					foreach (var destination in service.Destinations)
+					{
+						if (service.TtpPurpose?.IndexOf(_purposeFilter, StringComparison.InvariantCultureIgnoreCase) < 0)
+						{
+							continue;
+						}
 
-        public GQIArgument[] GetInputArguments()
-        {
-            return new GQIArgument[] { _argument };
-        }
+						string defaultSrcRouteName = string.Empty;
+						if (destination.HasDefaultChannel)
+						{
+							defaultSrcRouteName = destination.DefaultChannel.SrcRouteName;
+						}
 
-        public OnArgumentsProcessedOutputArgs OnArgumentsProcessed(OnArgumentsProcessedInputArgs args)
-        {
-            _purposeFilter = args.GetArgumentValue(_argument);
-            return default;
-        }
+						string protectionSrcRouteName = string.Empty;
+						if (destination.HasProtectionChannel)
+						{
+							protectionSrcRouteName = destination.ProtectionChannel.SrcRouteName;
+						}
 
-        public GQIPage GetNextPage(GetNextPageInputArgs args)
-        {
-            var nimbraDestinations = NimbraDestinations;
+						var newRow = new GQIRow(
+						new[]
+						{
+						new GQICell { Value = destination.Key },
+						new GQICell { Value = service.SrcNodeName },
+						new GQICell { Value = service.TtpPurpose },
+						new GQICell { Value = service.SrcDsti },
+						new GQICell { Value = service.CustomerId },
+						new GQICell { Value = destination.DstOperStatus.ToString() },
+						new GQICell { Value = destination.DstDsti },
+						new GQICell { Value = destination.DstName },
+						new GQICell { Value = destination.HasDefaultChannel },
+						new GQICell { Value = destination.HasProtectionChannel },
+						new GQICell { Value = defaultSrcRouteName },
+						new GQICell { Value = protectionSrcRouteName },
+						});
 
-            var rows = new List<GQIRow>();
+						rows.Add(newRow);
+					}
+				}
 
-            foreach (var destination in nimbraDestinations)
-            {
-                var newRow = new GQIRow(
-                    new[]
-                    {
-                        new GQICell { Value = destination.Id },
-                        new GQICell { Value = destination.SrcNodeName },
-                        new GQICell { Value = destination.SrcTtpPurpose },
-                        new GQICell { Value = destination.SrcDsti },
-                        new GQICell { Value = destination.SrcCustomerId },
-                        new GQICell { Value = destination.DstOperStatus.ToString() },
-                        new GQICell { Value = destination.DstDsti },
-                        new GQICell { Value = destination.DstName },
-                        new GQICell { Value = destination.DefaultChannel },
-                        new GQICell { Value = destination.ProtectionChannel },
-                        new GQICell { Value = destination.DefaultSrcRouteName },
-                        new GQICell { Value = destination.ProtectionSrcRouteName },
-                    });
+				if (rows.Count > limit)
+				{
+					break;
+				}
+			}
 
-                rows.Add(newRow);
-            }
+			return new GQIPage(rows.ToArray())
+			{
+				HasNextPage = leftOff < Nodes.Length,
+			};
+		}
 
-            var filteredRows = rows.Where(row => (string)row.Cells[2].Value == _purposeFilter).ToArray();
+		public OnInitOutputArgs OnInit(OnInitInputArgs args)
+		{
+			_dms = DmsFactory.CreateDms(new GqiConnection(args.DMS));
+			return new OnInitOutputArgs();
+		}
 
-            return new GQIPage(filteredRows)
-            {
-                HasNextPage = false,
-            };
-        }
+		public class GqiConnection : ICommunication
+		{
+			private readonly GQIDMS _gqiDms;
 
-        public OnInitOutputArgs OnInit(OnInitInputArgs args)
-        {
-            _dms = DmsFactory.CreateDms(new GqiConnection(args.DMS));
-            return new OnInitOutputArgs();
-        }
+			public GqiConnection(GQIDMS gqiDms)
+			{
+				_gqiDms = gqiDms ?? throw new ArgumentNullException(nameof(gqiDms));
+			}
 
-        public class GqiConnection : ICommunication
-        {
-            private readonly GQIDMS _gqiDms;
+			public DMSMessage[] SendMessage(DMSMessage message)
+			{
+				return _gqiDms.SendMessages(message);
+			}
 
-            public GqiConnection(GQIDMS gqiDms)
-            {
-                _gqiDms = gqiDms ?? throw new ArgumentNullException(nameof(gqiDms));
-            }
+			public DMSMessage SendSingleResponseMessage(DMSMessage message)
+			{
+				return _gqiDms.SendMessage(message);
+			}
 
-            public DMSMessage[] SendMessage(DMSMessage message)
-            {
-                return _gqiDms.SendMessages(message);
-            }
+			public DMSMessage SendSingleRawResponseMessage(DMSMessage message)
+			{
+				return _gqiDms.SendMessage(message);
+			}
 
-            public DMSMessage SendSingleResponseMessage(DMSMessage message)
-            {
-                return _gqiDms.SendMessage(message);
-            }
+			public void AddSubscriptionHandler(NewMessageEventHandler handler)
+			{
+				throw new NotImplementedException();
+			}
 
-            public DMSMessage SendSingleRawResponseMessage(DMSMessage message)
-            {
-                return _gqiDms.SendMessage(message);
-            }
+			public void AddSubscriptions(NewMessageEventHandler handler, string handleGuid, SubscriptionFilter[] subscriptions)
+			{
+				throw new NotImplementedException();
+			}
 
-            public void AddSubscriptionHandler(NewMessageEventHandler handler)
-            {
-                throw new NotImplementedException();
-            }
+			public void ClearSubscriptionHandler(NewMessageEventHandler handler)
+			{
+				throw new NotImplementedException();
+			}
 
-            public void AddSubscriptions(NewMessageEventHandler handler, string handleGuid, SubscriptionFilter[] subscriptions)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void ClearSubscriptionHandler(NewMessageEventHandler handler)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void ClearSubscriptions(NewMessageEventHandler handler, string handleGuid, bool replaceWithEmpty = false)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public class MergedTables
-        {
-            public string Id { get; set; }
-
-            public string SrcNodeName { get; set; }
-
-            public string SrcTtpPurpose { get; set; }
-
-            public string SrcDsti { get; set; }
-
-            public int SrcCustomerId { get; set; }
-
-            public DstOperationStatus DstOperStatus { get; set; }
-
-            public string DstDsti { get; set; }
-
-            public string DstName { get; set; }
-
-            public bool DefaultChannel { get; set; }
-
-            public bool ProtectionChannel { get; set; }
-
-            public string DefaultSrcRouteName { get; set; }
-
-            public string ProtectionSrcRouteName { get; set;}
-        }
-    }
+			public void ClearSubscriptions(NewMessageEventHandler handler, string handleGuid, bool replaceWithEmpty = false)
+			{
+				throw new NotImplementedException();
+			}
+		}
+	}
 }
