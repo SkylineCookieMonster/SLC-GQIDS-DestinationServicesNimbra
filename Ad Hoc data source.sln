@@ -46,6 +46,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Actions", "Actions", "{38D8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetDestinationServicesNimbra_1", "GetDestinationServicesNimbra_1\GetDestinationServicesNimbra_1.csproj", "{F309AEE2-877C-46AF-BFBE-9B544600F0C5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GetServicesNimbra", "GetServicesNimbra", "{3C53A892-00A1-4E2A-8921-F02DD1C1D98D}"
+	ProjectSection(SolutionItems) = preProject
+		GetServicesNimbra.xml = GetServicesNimbra.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Actions", "Actions", "{B9499D7A-4DC2-4971-BA4F-9698100E8BB1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetServicesNimbra_1", "GetServicesNimbra_1\GetServicesNimbra_1.csproj", "{421356AC-837C-4F1E-B9F5-32DF151FD5E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +65,10 @@ Global
 		{F309AEE2-877C-46AF-BFBE-9B544600F0C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F309AEE2-877C-46AF-BFBE-9B544600F0C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F309AEE2-877C-46AF-BFBE-9B544600F0C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{421356AC-837C-4F1E-B9F5-32DF151FD5E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{421356AC-837C-4F1E-B9F5-32DF151FD5E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{421356AC-837C-4F1E-B9F5-32DF151FD5E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{421356AC-837C-4F1E-B9F5-32DF151FD5E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -66,6 +79,9 @@ Global
 		{24E6A5B5-ABC4-42A2-93A9-B125516D6C11} = {B51D0C79-D790-4F88-9D70-68D9A4E2EEB9}
 		{38D844AC-DB28-445F-9896-71363CA9C5E6} = {24E6A5B5-ABC4-42A2-93A9-B125516D6C11}
 		{F309AEE2-877C-46AF-BFBE-9B544600F0C5} = {38D844AC-DB28-445F-9896-71363CA9C5E6}
+		{3C53A892-00A1-4E2A-8921-F02DD1C1D98D} = {B51D0C79-D790-4F88-9D70-68D9A4E2EEB9}
+		{B9499D7A-4DC2-4971-BA4F-9698100E8BB1} = {3C53A892-00A1-4E2A-8921-F02DD1C1D98D}
+		{421356AC-837C-4F1E-B9F5-32DF151FD5E2} = {B9499D7A-4DC2-4971-BA4F-9698100E8BB1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {520DECA0-2B56-4064-8109-2681B9D129EE}
